@@ -1,0 +1,46 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Пользователь", "Использует сервис с ноутбуков, ТВ и мобильных устройств")
+System_Boundary(kinobezdna, "КиноБездна") {
+  Container(apiGateway, "API Gateway", "Go", "Единая точка входа для всех клиентских приложений")
+
+  Container(authService, "Auth Service", "Go", "Аутентификация и управление сессиями")
+  Container(metadataService, "Metadata Service", "Go", "Метаданные о фильмах: жанры, актёры, рейтинги")
+  Container(videoService, "Video Service", "Go", "Управление видео, стриминг, загрузка в S3")
+  Container(paymentService, "Payment Service", "Go", "Обработка платежей и подписок")
+  Container(userService, "User Service", "Go", "Профили пользователей, избранное, оценки")
+
+  ContainerDb(authDb, "Auth DB", "PostgreSQL", "Хранение данных пользователей и сессий")
+  ContainerDb(metadataDb, "Metadata DB", "PostgreSQL", "Хранение метаданных о фильмах")
+  ContainerDb(videoDb, "Video DB", "PostgreSQL", "Хранение информации о видео")
+  ContainerDb(paymentDb, "Payment DB", "PostgreSQL", "Хранение информации о платежах и подписках")
+  ContainerDb(userDb, "User DB", "PostgreSQL", "Хранение пользовательских оценок и избранного")
+
+  Container(s3, "S3 Storage", "Объектное хранилище", "Файлы видео и обложек")
+  Container(messageBus, "Kafka", "Event Streaming", "Передача событий между микросервисами")
+}
+
+System_Ext(paymentSystem, "Платёжная система", "Внешняя система обработки платежей")
+System_Ext(recommendationSystem, "Рекомендательная система", "Делает подборки фильмов")
+
+Rel(user, apiGateway, "Запросы через UI (web, mobile, smart TV)", "HTTPS")
+Rel(apiGateway, authService, "Аутентификация")
+Rel(apiGateway, metadataService, "Запросы метаданных")
+Rel(apiGateway, videoService, "Просмотр видео")
+Rel(apiGateway, paymentService, "Платежи и подписки")
+Rel(apiGateway, userService, "Оценки, избранное")
+
+Rel(videoService, s3, "Хранение видео")
+Rel(paymentService, paymentSystem, "Обработка платежей", "HTTPS")
+Rel(userService, messageBus, "Отправка событий")
+Rel(metadataService, messageBus, "Получение обновлений")
+Rel(messageBus, recommendationSystem, "Отправка событий о действиях пользователей")
+
+Rel_L(authService, authDb, "Чтение/запись")
+Rel_L(metadataService, metadataDb, "Чтение/запись")
+Rel_L(videoService, videoDb, "Чтение/запись")
+Rel_L(paymentService, paymentDb, "Чтение/запись")
+Rel_L(userService, userDb, "Чтение/запись")
+
+@enduml
